@@ -226,9 +226,9 @@ public:
 
 int main() {
     vector<string> files = {
-        "active.txt", 
-        "iridium-33-debris.txt", 
-        "fengyun-1c-debris.txt"
+        "data/active.txt", 
+        "data/iridium-33-debris.txt", 
+        "data/fengyun-1c-debris.txt"
     };
     
     int total_sat_count = 0;
@@ -324,7 +324,7 @@ int main() {
 
         int successfully_inserted = 0;
 
-        ofstream export_file("orbital_data.csv");
+        ofstream export_file("output/orbital_data.csv");
         export_file << "Name,X,Y,Z\n"; 
 
         for (size_t i = 0; i < fleet.size(); i++) {
@@ -392,7 +392,7 @@ int main() {
 
       // ------------------------------ 7. Alert Export ------------------------------
 
-        ofstream alert_file("collision_alert.csv");
+        ofstream alert_file("output/collision_alert.csv");
         alert_file << "X,Y,Z\n"; 
         for (size_t j = 0; j < dangerous_neighbors.size(); j++) {
             alert_file << dangerous_neighbors[j].x << "," << dangerous_neighbors[j].y << "," << dangerous_neighbors[j].z << "\n";
