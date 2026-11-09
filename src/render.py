@@ -5,7 +5,7 @@ import os
 
 # ------------------------------ 1. Load data ------------------------------
 
-df = pd.read_csv('orbital_data.csv')
+df = pd.read_csv('output/orbital_data.csv')
 
 # Force numeric values and drop satellites yielding "Infinity" or "NaN"
 
@@ -55,8 +55,8 @@ scatter_detritos = ax.scatter(debris['X'], debris['Y'], debris['Z'], color='#ff0
 
 ax.plot([target_x], [target_y], [target_z], marker='*', color='yellow', markersize=20, markeredgecolor='black', linestyle='None', label='Target', zorder=10)
 
-if os.path.exists('collision_alert.csv'):
-    collisions = pd.read_csv('collision_alert.csv')
+if os.path.exists('output/collision_alert.csv'):
+    collisions = pd.read_csv('output/collision_alert.csv')
     collisions['X'] = pd.to_numeric(collisions['X'], errors='coerce')
     collisions = collisions.dropna(subset=['X'])
     
