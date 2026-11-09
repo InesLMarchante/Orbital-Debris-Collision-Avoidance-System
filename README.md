@@ -50,3 +50,45 @@ The code relies on a few core orbital mechanics concepts:
 │   ├── orbital_data.csv       # Generated fleet coordinates
 │   └── collision_alert.csv    # Generated threat coordinates
 └── README.md
+```
+
+## ⚙️ Quick Start
+
+### **Pre-requisites:**
+  
+* **C++ Compiler:** GCC or Clang
+
+* **Python 3:** Ensure you have a working Python environment.
+
+### **Build and Run (terminal):**
+
+* **1. Get the Code:**
+
+Download the repository as a ZIP file (click the green **Code** button > **Download ZIP**) and extract it. Then, open your terminal and navigate to the project folder:
+
+`cd path/to/Orbital-Debris-Collision-Avoidance-System`
+  
+* **2. Install Python Dependencies:**
+
+`pip install pandas numpy matplotlib`
+
+* **3. Compile the C++ Engine:**
+
+`g++ -O3 src/detc.cpp -o detc`
+
+* **4. Run the calculation:**
+
+`./detc`
+
+* **5. Open the 3D Visualizer:**
+
+`python src/render.py`
+
+## ⌨️ Interactive Controls (3D Visualizer in Python)
+
+* **Z:** Toggle zoom on the target satellite.
+  
+* **1:** Show/hide active satellites (Green).
+  
+* **2:** Show/hide space debris (Red).
+  
