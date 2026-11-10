@@ -407,7 +407,7 @@ int main() {
         Coordinates2D target_plane = calculate2DPlane(target_sat.mean_motion, E_target, target_sat.eccentricity);
         Coordinates3D target_pos = calculate3DPosition(target_plane.x, target_plane.y, target_sat.inclination, target_sat.RAAN, target_sat.arg_perigee);
 
-        Box3D collision_alert = {target_pos, 50.0}; // Mantido a 2000km para testar alertas visuais
+        Box3D collision_alert = {target_pos, 2000.0}; // Mantido a 2000km para testar alertas visuais
         std::vector<Coordinates3D> dangerous_neighbors;
         universe.query(collision_alert, dangerous_neighbors);
 
