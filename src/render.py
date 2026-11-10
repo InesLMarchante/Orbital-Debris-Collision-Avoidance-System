@@ -49,7 +49,7 @@ z_earth = 6371 * np.sin(lats)
 
 try:
     # Load and resize the texture to match the grid resolution (100x50)
-    img = Image.open('data/earth.jpg')
+    img = Image.open('data/2k_earth_daymap.jpg')
     img = img.resize((100, 50))
     img_color = np.array(img) / 255.0
     
