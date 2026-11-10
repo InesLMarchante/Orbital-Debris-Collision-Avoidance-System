@@ -56,6 +56,117 @@ struct Box3D {
     }
 };
 
+class Octree {
+public:
+    Box3D boundary; 
+    int capacity = 4; 
+    std::vector<Coordinates3D> points;
+
+    bool box_divided = false;
+    Octree* children[8];
+
+    // ------------------- 2.3. Constructor -------------------
+
+    Octree(Box3D limit) {
+        boundary = limit;
+    }
+
+    // -------- 2.4. Destructor to prevent memory leaks --------
+
+    ~Octree() {
+        if (box_divided) {
+            for (int i = 0; i < 8; i++) {
+                delete children[i]; 
+            }
+        }
+    }
+
+    bool insert(Coordinates3D p) {
+        // ---------- 2.5. - Phase 1: Boundary check ----------
+        
+        if (!boundary.isInsideBox(p)) {
+            return false;
+        }
+
+        // ---------- 2.6. - Phase 2: Capacity check ----------
+        
+        if (points.size() < capacity) {
+            points.push_back(p); 
+            return true;
+        }
+
+        // ----------- 2.7. - Phase 3: Subdivision ------------
+        
+        if (!box_divided) {
+            subdivide(); 
+            box_divided = true; 
+        }
+
+        for (int i = 0; i < 8; i++) {
+            if (children[i]->insert(p)) {
+                return true; 
+            }
+        }
+        return false;
+    }
+
+    void subdivide() {
+        double new_size = boundary.box_size / 2.0;
+        double x = boundary.center.x;
+        double y = boundary.center.y;
+        double z = boundary.center.z;
+
+        // ----------- 2.8. Calculate the 8 new geometric centers -----------
+
+        Coordinates3D c0 = {x - new_size, y - new_size, z - new_size};
+        Coordinates3D c1 = {x + new_size, y - new_size, z - new_size};
+        Coordinates3D c2 = {x - new_size, y + new_size, z - new_size};
+        Coordinates3D c3 = {x + new_size, y + new_size, z - new_size};
+        Coordinates3D c4 = {x - new_size, y - new_size, z + new_size};
+        Coordinates3D c5 = {x + new_size, y - new_size, z + new_size};
+        Coordinates3D c6 = {x - new_size, y + new_size, z + new_size};
+        Coordinates3D c7 = {x + new_size, y + new_size, z + new_size};
+
+        // ---------------- 2.9. Create the 8 physical boxes ----------------
+        
+        Box3D b0 = {c0, new_size}; Box3D b1 = {c1, new_size};
+        Box3D b2 = {c2, new_size}; Box3D b3 = {c3, new_size};
+        Box3D b4 = {c4, new_size}; Box3D b5 = {c5, new_size};
+        Box3D b6 = {c6, new_size}; Box3D b7 = {c7, new_size};
+
+        // -------- 2.10. Allocate the 8 new child Octrees in memory ---------
+        
+        children[0] = new Octree(b0); children[1] = new Octree(b1);
+        children[2] = new Octree(b2); children[3] = new Octree(b3);
+        children[4] = new Octree(b4); children[5] = new Octree(b5);
+        children[6] = new Octree(b6); children[7] = new Octree(b7);
+    }
+
+    void query(Box3D search_area, std::vector<Coordinates3D>& found_objects) {
+        // ----- 2.11. - Phase 1: Collision check (Performance optimization) -----
+        
+        if (!boundary.intersects(search_area)) {
+            return; 
+        }
+
+        // ----------------- 2.12. - Phase 2: Check local points -----------------
+        
+        for (size_t i = 0; i < points.size(); i++) {
+            if (search_area.isInsideBox(points[i])) {
+                found_objects.push_back(points[i]);
+            }
+        }
+
+        // ------------ 2.13. - Phase 3: Recursive query to children -------------
+        
+        if (box_divided) {
+            for (int i = 0; i < 8; i++) {
+                children[i]->query(search_area, found_objects);
+            }
+        }
+    }
+};
+
 // ------------------------------ 3. Orbital Mechanics Math ------------------------------
 
 double keplerEquation(double M_degrees, double e) {
@@ -108,119 +219,6 @@ Coordinates3D calculate3DPosition(double x_derivative, double y_derivative, doub
 
     return pos;
 }
-
-class Octree {
-public:
-    Box3D boundary; 
-    int capacity = 4; 
-    std::vector<Coordinates3D> points;
-
-    bool box_divided = false;
-    Octree* children[8];
-
-    // ------------------- 3.1. Constructor -------------------
-
-    Octree(Box3D limit) {
-        boundary = limit;
-    }
-
-    // -------- 3.2. Destructor to prevent memory leaks --------
-
-    ~Octree() {
-        if (box_divided) {
-            for (int i = 0; i < 8; i++) {
-                delete children[i]; 
-            }
-        }
-    }
-
-    bool insert(Coordinates3D p) {
-      
-        // ---------- 3.3. - Phase 1: Boundary check ----------
-      
-        if (!boundary.isInsideBox(p)) {
-            return false;
-        }
-
-        // ---------- 3.4. - Phase 2: Capacity check ----------
-      
-        if (points.size() < capacity) {
-            points.push_back(p); 
-            return true;
-        }
-
-        // ----------- 3.5. - Phase 3: Subdivision ------------
-      
-        if (!box_divided) {
-            subdivide(); 
-            box_divided = true; 
-        }
-
-        for (int i = 0; i < 8; i++) {
-            if (children[i]->insert(p)) {
-                return true; 
-            }
-        }
-        return false;
-    }
-
-    void subdivide() {
-        double new_size = boundary.box_size / 2.0;
-        double x = boundary.center.x;
-        double y = boundary.center.y;
-        double z = boundary.center.z;
-
-        // ----------- 3.6. Calculate the 8 new geometric centers -----------
-
-        Coordinates3D c0 = {x - new_size, y - new_size, z - new_size};
-        Coordinates3D c1 = {x + new_size, y - new_size, z - new_size};
-        Coordinates3D c2 = {x - new_size, y + new_size, z - new_size};
-        Coordinates3D c3 = {x + new_size, y + new_size, z - new_size};
-        Coordinates3D c4 = {x - new_size, y - new_size, z + new_size};
-        Coordinates3D c5 = {x + new_size, y - new_size, z + new_size};
-        Coordinates3D c6 = {x - new_size, y + new_size, z + new_size};
-        Coordinates3D c7 = {x + new_size, y + new_size, z + new_size};
-
-        // ---------------- 3.7. Create the 8 physical boxes ----------------
-      
-        Box3D b0 = {c0, new_size}; Box3D b1 = {c1, new_size};
-        Box3D b2 = {c2, new_size}; Box3D b3 = {c3, new_size};
-        Box3D b4 = {c4, new_size}; Box3D b5 = {c5, new_size};
-        Box3D b6 = {c6, new_size}; Box3D b7 = {c7, new_size};
-
-        // -------- 3.8. Allocate the 8 new child Octrees in memory ---------
-      
-        children[0] = new Octree(b0); children[1] = new Octree(b1);
-        children[2] = new Octree(b2); children[3] = new Octree(b3);
-        children[4] = new Octree(b4); children[5] = new Octree(b5);
-        children[6] = new Octree(b6); children[7] = new Octree(b7);
-    }
-
-    void query(Box3D search_area, std::vector<Coordinates3D>& found_objects) {
-      
-        // ----- 3.9. - Phase 1: Collision check (Performance optimization) -----
-      
-        if (!boundary.intersects(search_area)) {
-            return; 
-        }
-
-        // ----------------- 3.10. - Phase 2: Check local points -----------------
-      
-        for (size_t i = 0; i < points.size(); i++) {
-            if (search_area.isInsideBox(points[i])) {
-                found_objects.push_back(points[i]);
-            }
-        }
-
-        // ------------ 3.11. - Phase 3: Recursive query to children -------------
-      
-        if (box_divided) {
-            for (int i = 0; i < 8; i++) {
-                children[i]->query(search_area, found_objects);
-            }
-        }
-    }
-};
 
 // ------------------------------ 4. Main Execution ------------------------------
 
@@ -344,24 +342,45 @@ int main() {
         cout << "[+] Engine online. Partitioning space limit: 100,000 km" << endl;
         cout << "[+] Success: " << successfully_inserted << " objects mapped to spatial grid." << endl;
 
-        // ---------------- 6.2. TARGET ACQUISITION (PROFILE) ----------------
-      
+        // ------------------------------ 7. Interactive Target Acquisition ------------------------------
+        
         cout << "\n=========================================================" << endl;
-        cout << "                   TARGET ACQUISITION                    " << endl;
+        cout << "                 LAUNCH SITE SELECTION                   " << endl;
         cout << "=========================================================" << endl;
-        cout << " Target Name      : " << fleet[0].name << endl;
-        cout << " Inclination      : " << fleet[0].inclination << " deg" << endl;
-        cout << " RAAN             : " << fleet[0].RAAN << " deg" << endl;
-        cout << " Eccentricity     : " << fleet[0].eccentricity << endl;
-        cout << " Arg of Perigee   : " << fleet[0].arg_perigee << " deg" << endl;
-        cout << " Mean Anomaly     : " << fleet[0].mean_anomaly << " deg" << endl;
-        cout << " Mean Motion      : " << fleet[0].mean_motion << " revs/day" << endl;
+        cout << " Select launch origin for your payload:" << endl;
+        cout << " 1. French Guiana (Kourou)       - Lat: 5.2 deg" << endl;
+        cout << " 2. USA (Cape Canaveral)         - Lat: 28.5 deg" << endl;
+        cout << " 3. Portugal (Azores Spaceport)  - Lat: 37.0 deg" << endl;
+        cout << " 4. Kazakhstan (Baikonur)        - Lat: 45.9 deg" << endl;
+        cout << " > ";
+        
+        int choice;
+        cin >> choice;
 
-        // ----------------- 6.3. COLLISION AVOIDANCE SYSTEM -----------------
+        Satellite target_sat;
+        target_sat.name = "CUSTOM LAUNCH PAYLOAD";
+        target_sat.eccentricity = 0.001; // Circular LEO
+        target_sat.RAAN = 0.0;
+        target_sat.arg_perigee = 0.0;
+        target_sat.mean_anomaly = 0.0;
+        target_sat.mean_motion = 15.5; // Approx 400km altitude
+
+        // The physics touch: Minimum inclination equals launch latitude
+        switch(choice) {
+            case 1: target_sat.inclination = 5.2; break;
+            case 2: target_sat.inclination = 28.5; break;
+            case 3: target_sat.inclination = 37.0; break;
+            case 4: target_sat.inclination = 45.9; break;
+            default: target_sat.inclination = 37.0; break;
+        }
+
+        cout << "\n[+] Launch trajectory confirmed. Injecting into LEO with " << target_sat.inclination << " deg inclination." << endl;
+
+        // ----------------- 8. COLLISION AVOIDANCE SYSTEM -----------------
       
-        double E_target = keplerEquation(fleet[0].mean_anomaly, fleet[0].eccentricity);
-        Coordinates2D target_plane = calculate2DPlane(fleet[0].mean_motion, E_target, fleet[0].eccentricity);
-        Coordinates3D target_pos = calculate3DPosition(target_plane.x, target_plane.y, fleet[0].inclination, fleet[0].RAAN, fleet[0].arg_perigee);
+        double E_target = keplerEquation(target_sat.mean_anomaly, target_sat.eccentricity);
+        Coordinates2D target_plane = calculate2DPlane(target_sat.mean_motion, E_target, target_sat.eccentricity);
+        Coordinates3D target_pos = calculate3DPosition(target_plane.x, target_plane.y, target_sat.inclination, target_sat.RAAN, target_sat.arg_perigee);
 
         Box3D collision_alert = {target_pos, 50.0}; 
         std::vector<Coordinates3D> dangerous_neighbors;
@@ -390,15 +409,16 @@ int main() {
         }
         cout << "=========================================================\n" << endl;
 
-      // ------------------------------ 7. Alert Export ------------------------------
+      // ------------------------------ 9. Alert Export ------------------------------
 
         ofstream alert_file("output/collision_alert.csv");
-        alert_file << "X,Y,Z\n"; 
+        alert_file << "Type,X,Y,Z\n"; // Header updated
+        alert_file << "TARGET," << target_pos.x << "," << target_pos.y << "," << target_pos.z << "\n";
         for (size_t j = 0; j < dangerous_neighbors.size(); j++) {
-            alert_file << dangerous_neighbors[j].x << "," << dangerous_neighbors[j].y << "," << dangerous_neighbors[j].z << "\n";
+            alert_file << "DEBRIS," << dangerous_neighbors[j].x << "," << dangerous_neighbors[j].y << "," << dangerous_neighbors[j].z << "\n";
         }
         alert_file.close();
-        }
+    }
 
     return 0;
 }
