@@ -80,6 +80,8 @@ Download the repository as a ZIP file (click the green **Code** button > **Downl
 
 `./detc`
 
+**Note :** The engine will prompt you in the terminal to select a launch site (e.g., Azores, Cape Canaveral) or run a "Demo Stress Test" to force a collision scenario. Enter your choice (1-5) and press Enter.
+
 * **5. Open the 3D Visualizer:**
 
 `python src/render.py`
