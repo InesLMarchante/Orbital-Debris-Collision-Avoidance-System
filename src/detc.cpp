@@ -407,7 +407,8 @@ int main() {
         Coordinates2D target_plane = calculate2DPlane(target_sat.mean_motion, E_target, target_sat.eccentricity);
         Coordinates3D target_pos = calculate3DPosition(target_plane.x, target_plane.y, target_sat.inclination, target_sat.RAAN, target_sat.arg_perigee);
 
-        Box3D collision_alert = {target_pos, 2000.0}; // Mantido a 2000km para testar alertas visuais
+        // Voltar ao raio de deteção realista de 50 km
+        Box3D collision_alert = {target_pos, 50.0}; 
         std::vector<Coordinates3D> dangerous_neighbors;
         universe.query(collision_alert, dangerous_neighbors);
 
@@ -415,7 +416,7 @@ int main() {
         cout << "               COLLISION AVOIDANCE SYSTEM                " << endl;
         cout << "=========================================================" << endl;
         cout << ">>> Target Coordinates : [ X: " << target_pos.x << " | Y: " << target_pos.y << " | Z: " << target_pos.z << " ]" << endl;
-        cout << ">>> Scanning radius    : 2000.0 km" << endl;
+        cout << ">>> Scanning radius    : 50.0 km" << endl;
         cout << "\n[!] ALERT REPORT:" << endl;
         cout << "    Objects detected in zone : " << dangerous_neighbors.size() << "\n" << endl;
 
