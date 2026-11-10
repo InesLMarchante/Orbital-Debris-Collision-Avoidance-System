@@ -360,21 +360,46 @@ int main() {
         Satellite target_sat;
         target_sat.name = "CUSTOM LAUNCH PAYLOAD";
         target_sat.eccentricity = 0.001; // Circular LEO
-        target_sat.RAAN = 0.0;
         target_sat.arg_perigee = 0.0;
-        target_sat.mean_anomaly = 0.0;
-        target_sat.mean_motion = 15.5; // Approx 400km altitude
+        target_sat.mean_anomaly = 90.0;  // Coloca o satélite na latitude máxima da sua órbita
+        target_sat.mean_motion = 15.5;   // Approx 400km altitude
 
-        // The physics touch: Minimum inclination equals launch latitude
+        double launch_lat = 0.0;
+        double launch_lon = 0.0;
+
         switch(choice) {
-            case 1: target_sat.inclination = 5.2; break;
-            case 2: target_sat.inclination = 28.5; break;
-            case 3: target_sat.inclination = 37.0; break;
-            case 4: target_sat.inclination = 45.9; break;
-            default: target_sat.inclination = 37.0; break;
+            case 1: // French Guiana (Kourou)
+                launch_lat = 5.2;
+                launch_lon = -52.8;
+                break;
+            case 2: // USA (Cape Canaveral)
+                launch_lat = 28.5;
+                launch_lon = -80.6;
+                break;
+            case 3: // Portugal (Azores Spaceport, Santa Maria)
+                launch_lat = 37.0;
+                launch_lon = -25.1;
+                break;
+            case 4: // Kazakhstan (Baikonur)
+                launch_lat = 45.9;
+                launch_lon = 63.3;
+                break;
+            default: // Default to Portugal
+                launch_lat = 37.0;
+                launch_lon = -25.1;
+                break;
         }
 
-        cout << "\n[+] Launch trajectory confirmed. Injecting into LEO with " << target_sat.inclination << " deg inclination." << endl;
+        // Aplicação física da posição:
+        target_sat.inclination = launch_lat;
+        
+        // Alinhamento com o mapa 3D da Terra (Longitude - 90 graus devido à rotação ECI)
+        target_sat.RAAN = launch_lon - 90.0;
+        if (target_sat.RAAN < 0) {
+            target_sat.RAAN += 360.0;
+        }
+
+        cout << "\n[+] Launch trajectory confirmed. Injecting into LEO from Lat: " << launch_lat << " Lon: " << launch_lon << endl;
 
         // ----------------- 8. COLLISION AVOIDANCE SYSTEM -----------------
       
@@ -382,7 +407,7 @@ int main() {
         Coordinates2D target_plane = calculate2DPlane(target_sat.mean_motion, E_target, target_sat.eccentricity);
         Coordinates3D target_pos = calculate3DPosition(target_plane.x, target_plane.y, target_sat.inclination, target_sat.RAAN, target_sat.arg_perigee);
 
-        Box3D collision_alert = {target_pos, 2000.0}; 
+        Box3D collision_alert = {target_pos, 2000.0}; // Mantido a 2000km para testar alertas visuais
         std::vector<Coordinates3D> dangerous_neighbors;
         universe.query(collision_alert, dangerous_neighbors);
 
@@ -390,7 +415,7 @@ int main() {
         cout << "               COLLISION AVOIDANCE SYSTEM                " << endl;
         cout << "=========================================================" << endl;
         cout << ">>> Target Coordinates : [ X: " << target_pos.x << " | Y: " << target_pos.y << " | Z: " << target_pos.z << " ]" << endl;
-        cout << ">>> Scanning radius    : 50.0 km" << endl;
+        cout << ">>> Scanning radius    : 2000.0 km" << endl;
         cout << "\n[!] ALERT REPORT:" << endl;
         cout << "    Objects detected in zone : " << dangerous_neighbors.size() << "\n" << endl;
 
