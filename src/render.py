@@ -104,11 +104,13 @@ legend = ax.legend(facecolor="#111111", edgecolor='#444444', labelcolor='white',
                    borderpad=1.2, labelspacing=1.2, handletextpad=1.0)
 
 legend_handles = legend.legend_handles
-if len(legend_handles) >= 4:
-    legend_handles[0].set_sizes([120])  
-    legend_handles[1].set_sizes([120])  
-    legend_handles[2].set_markersize(14) 
-    legend_handles[3].set_markersize(14) 
+for handle in legend_handles:
+    # Se for um scatter plot (Satélites e Detritos)
+    if hasattr(handle, 'set_sizes'):
+        handle.set_sizes([120])
+    # Se for um plot normal (Alvo e Alertas)
+    elif hasattr(handle, 'set_markersize'):
+        handle.set_markersize(14)
 
 ax.tick_params(colors='lightgray', labelsize=9)
 ax.xaxis.label.set_color('lightgray'); ax.yaxis.label.set_color('lightgray'); ax.zaxis.label.set_color('lightgray')
