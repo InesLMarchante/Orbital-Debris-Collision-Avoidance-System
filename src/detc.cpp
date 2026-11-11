@@ -143,7 +143,8 @@ public:
     }
 
     void query(Box3D search_area, std::vector<Coordinates3D>& found_objects) {
-        // ----- 2.11. - Phase 1: check (Performance optimization) -----
+        
+        // --------- 2.11. - Phase 1: check (Performance optimization) ---------
         
         if (!boundary.intersects(search_area)) {
             return; 
@@ -246,16 +247,24 @@ int main() {
         int file_sat_count = 0;
 
         while (getline(input, line)) {
-            if (line.find("GP data") != string::npos || line.find("Data is updated") != string::npos || line.empty()) continue; 
+            // Skip headers and empty lines
+            if (line.find("GP data") != string::npos || line.find("Data is updated") != string::npos || line.empty()) {
+                continue; 
+            }
             
             string sat_name = line;
             string line1, line2;
-            getline(input, line1); getline(input, line2);
+            getline(input, line1);
+            getline(input, line2);
 
-            // TLE format requires Line 2 to have at least 63 characters to hold mean motion
-            if (line2.length() < 63) continue; 
-            
+            // ------------------ 5.1. - Ignore incomplete or corrupted TLE lines ------------------
+          
+            if (line2.length() < 63) {
+                continue; 
+            }
+
             try {
+                // ---------- 5.2. - Extraction & Conversion ----------
                 Satellite temp_sat; 
                 temp_sat.name           = sat_name; 
                 temp_sat.inclination    = stod(line2.substr(8, 8));
@@ -264,55 +273,20 @@ int main() {
                 temp_sat.arg_perigee    = stod(line2.substr(34, 8));
                 temp_sat.mean_anomaly   = stod(line2.substr(43, 8));
                 temp_sat.mean_motion    = stod(line2.substr(52, 11));
+
                 fleet.push_back(temp_sat);
+                file_sat_count++;
                 total_sat_count++;
             } catch (const std::exception& e) {
-                // Fallback: se os dados estiverem corrompidos, ignora silenciosamente e avança
+                // Fallback silencioso para descartar satélites com dados numéricos corrompidos no TLE
                 continue;
             }
-        }
-
-            // ---------- 5.2. - Extraction (Specific substring cuts based on TLE format) ----------
-          
-            string text_inclination = line2.substr(8, 8);
-            string text_RAAN        = line2.substr(17, 8);
-            string text_eccentricity = line2.substr(26, 7); 
-            string text_arg_perigee = line2.substr(34, 8);
-            string text_anomaly     = line2.substr(43, 8);
-            string text_mean_motion = line2.substr(52, 11);
-
-            // ----------------------- 5.3. - Conversions (String -> Double) -----------------------
-          
-            double val_inclination = stod(text_inclination);
-            double val_RAAN        = stod(text_RAAN);
-            
-            // ------------- 5.4. - TLE TRICK: Prepend "0." for proper decimal parsing -------------
-          
-            double val_eccentricity  = stod("0." + text_eccentricity); 
-            
-            double val_arg_perigee = stod(text_arg_perigee);
-            double val_anomaly     = stod(text_anomaly);
-            double val_mean_motion = stod(text_mean_motion);
-
-            file_sat_count++;
-            total_sat_count++;
-
-            Satellite temp_sat; 
-            temp_sat.name           = sat_name; 
-            temp_sat.inclination    = val_inclination;
-            temp_sat.RAAN           = val_RAAN;
-            temp_sat.eccentricity   = val_eccentricity;
-            temp_sat.arg_perigee    = val_arg_perigee;
-            temp_sat.mean_anomaly   = val_anomaly;
-            temp_sat.mean_motion    = val_mean_motion;
-
-            fleet.push_back(temp_sat);
         }
         
         cout << "Success: Read " << file_sat_count << " objects from " << filename << endl;
         input.close(); 
-    }
-
+    } 
+    
 // ------------------------------ 6. Spatial Engine Initialization ------------------------------
   
     cout << "\n=========================================================" << endl;
@@ -370,10 +344,10 @@ int main() {
 
         Satellite target_sat;
         target_sat.name = "CUSTOM LAUNCH PAYLOAD";
-        target_sat.eccentricity = 0.001; // Circular LEO
+        target_sat.eccentricity = 0.001; 
         target_sat.arg_perigee = 0.0;
-        target_sat.mean_anomaly = 90.0;  // Coloca o satélite na latitude máxima da sua órbita
-        target_sat.mean_motion = 15.5;   // Approx 400km altitude
+        target_sat.mean_anomaly = 90.0;  
+        target_sat.mean_motion = 15.5;   
 
         double launch_lat = 0.0;
         double launch_lon = 0.0;
@@ -396,11 +370,12 @@ int main() {
                 launch_lon = 63.3;
                 break;
             case 5: { // [DEMO] Stress Test
+                
                 int idx = fleet.size() > 50 ? fleet.size() - 50 : 0; 
                 target_sat.eccentricity = fleet[idx].eccentricity;
                 target_sat.arg_perigee = fleet[idx].arg_perigee;
                 target_sat.mean_motion = fleet[idx].mean_motion;
-                target_sat.mean_anomaly = fleet[idx].mean_anomaly + 0.1; // +0.1 graus = a poucos km de distância!
+                target_sat.mean_anomaly = fleet[idx].mean_anomaly + 0.1; 
                 launch_lat = fleet[idx].inclination;
                 launch_lon = fleet[idx].RAAN + 90.0;
                 break;
@@ -410,6 +385,7 @@ int main() {
                 launch_lon = -25.1;
                 break;
         }
+
         target_sat.inclination = launch_lat;
         
         target_sat.RAAN = launch_lon - 90.0;
