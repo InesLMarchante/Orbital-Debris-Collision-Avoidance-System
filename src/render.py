@@ -48,7 +48,7 @@ y_earth = 6371 * np.sin(lons) * np.cos(lats)
 z_earth = 6371 * np.sin(lats)
 
 try:
-    texture_path = 'data/earth.jpg'
+    texture_path = 'data/2k_earth_daymap.jpg'
     if not os.path.exists(texture_path):
         print("Texture not found. Auto-downloading Earth map...")
         os.makedirs('data', exist_ok=True)
