@@ -83,7 +83,7 @@ if os.path.exists('output/collision_alert.csv'):
 
 # -------------------- 5. Dynamically separate the fleet --------------------
 
-is_deb = df['Name'].str.contains('DEB|FENGYUN|IRIDIUM|COSMOS', case=False, na=False)
+is_deb = df['Name'].astype(str).str.contains('DEB|FENGYUN|IRIDIUM|COSMOS', case=False, na=False)
 active_sats = df[~is_deb]
 debris = df[is_deb]
 
