@@ -246,21 +246,31 @@ int main() {
         int file_sat_count = 0;
 
         while (getline(input, line)) {
-            // Skip headers and empty lines
-            if (line.find("GP data") != string::npos || line.find("Data is updated") != string::npos || line.empty()) {
-                continue; 
-            }
+            if (line.find("GP data") != string::npos || line.find("Data is updated") != string::npos || line.empty()) continue; 
             
             string sat_name = line;
             string line1, line2;
-            getline(input, line1);
-            getline(input, line2);
+            getline(input, line1); getline(input, line2);
 
-            // ------------------ 5.1. - Ignore incomplete or corrupted TLE lines ------------------
-          
-            if (line2.length() < 25) {
-                continue; 
+            // TLE format requires Line 2 to have at least 63 characters to hold mean motion
+            if (line2.length() < 63) continue; 
+            
+            try {
+                Satellite temp_sat; 
+                temp_sat.name           = sat_name; 
+                temp_sat.inclination    = stod(line2.substr(8, 8));
+                temp_sat.RAAN           = stod(line2.substr(17, 8));
+                temp_sat.eccentricity   = stod("0." + line2.substr(26, 7)); 
+                temp_sat.arg_perigee    = stod(line2.substr(34, 8));
+                temp_sat.mean_anomaly   = stod(line2.substr(43, 8));
+                temp_sat.mean_motion    = stod(line2.substr(52, 11));
+                fleet.push_back(temp_sat);
+                total_sat_count++;
+            } catch (const std::exception& e) {
+                // Fallback: se os dados estiverem corrompidos, ignora silenciosamente e avança
+                continue;
             }
+        }
 
             // ---------- 5.2. - Extraction (Specific substring cuts based on TLE format) ----------
           
