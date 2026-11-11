@@ -99,18 +99,17 @@ scatter_detritos = ax.scatter(debris['X'], debris['Y'], debris['Z'], color='#ff3
 
 ax.set_title("Collision Avoidance System - Octree 3D\n(Press 'Z': Zoom | '1': Toggle Active | '2': Toggle Debris)", color='white', fontsize=14, fontweight='bold', pad=15)
 
-legend = ax.legend(facecolor="#111111", edgecolor='#444444', labelcolor='white', 
-                   loc='upper left', bbox_to_anchor=(-0.15, 0.95), 
-                   borderpad=1.2, labelspacing=1.2, handletextpad=1.0)
+from matplotlib.lines import Line2D
+custom_legend = [
+    Line2D([0], [0], marker='*', color='gold', markersize=14, linestyle='None', label='Launch Payload'),
+    Line2D([0], [0], marker='o', color='None', markeredgecolor='#ff00ff', markersize=12, markeredgewidth=2.5, linestyle='None', label='Imminent Threat!'),
+    Line2D([0], [0], marker='o', color='#00ffcc', markersize=10, alpha=0.8, linestyle='None', label='Active Satellites'),
+    Line2D([0], [0], marker='o', color='#ff3333', markersize=10, alpha=0.9, linestyle='None', label='Space Debris')
+]
 
-legend_handles = legend.legend_handles
-for handle in legend_handles:
-    # Se for um scatter plot (Satélites e Detritos)
-    if hasattr(handle, 'set_sizes'):
-        handle.set_sizes([120])
-    # Se for um plot normal (Alvo e Alertas)
-    elif hasattr(handle, 'set_markersize'):
-        handle.set_markersize(14)
+ax.legend(handles=custom_legend, facecolor="#111111", edgecolor='#444444', labelcolor='white', 
+          loc='upper left', bbox_to_anchor=(-0.15, 0.95), 
+          borderpad=1.2, labelspacing=1.2, handletextpad=1.0)
 
 ax.tick_params(colors='lightgray', labelsize=9)
 ax.xaxis.label.set_color('lightgray'); ax.yaxis.label.set_color('lightgray'); ax.zaxis.label.set_color('lightgray')
