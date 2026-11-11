@@ -3,12 +3,13 @@ import pandas as pd
 import numpy as np
 import os
 from PIL import Image
+import urllib.request
 
 # ------------------------------ 1. Load data ------------------------------
 
 df = pd.read_csv('output/orbital_data.csv')
 
-# Force numeric values and drop satellites yielding "Infinity" or "NaN"
+# Defense mechanism against C++ math errors
 df['X'] = pd.to_numeric(df['X'], errors='coerce')
 df['Y'] = pd.to_numeric(df['Y'], errors='coerce')
 df['Z'] = pd.to_numeric(df['Z'], errors='coerce')
@@ -38,7 +39,6 @@ ax.zaxis._axinfo["grid"]['color'] = (1, 1, 1, 0.1)
 
 # -------------------------- 3. Draw Planet Earth (Textured) --------------------------
 
-# Create spherical grid
 lons = np.linspace(-180, 180, 100) * np.pi/180
 lats = np.linspace(-90, 90, 50)[::-1] * np.pi/180
 lons, lats = np.meshgrid(lons, lats)
@@ -48,25 +48,28 @@ y_earth = 6371 * np.sin(lons) * np.cos(lats)
 z_earth = 6371 * np.sin(lats)
 
 try:
-    # Load and resize the texture to match the grid resolution (100x50)
-    img = Image.open('data/2k_earth_daymap.jpg')
+    texture_path = 'data/earth.jpg'
+    if not os.path.exists(texture_path):
+        print("Texture not found. Auto-downloading Earth map...")
+        os.makedirs('data', exist_ok=True)
+        urllib.request.urlretrieve("https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg", texture_path)
+        
+    img = Image.open(texture_path)
     img = img.resize((100, 50))
     img_color = np.array(img) / 255.0
-    
-    # Map the texture to the surface
     ax.plot_surface(x_earth, y_earth, z_earth, facecolors=img_color, rstride=1, cstride=1, antialiased=True, zorder=0)
-except FileNotFoundError:
-    print("Texture 'data/earth.jpg' not found. Falling back to solid blue sphere.")
+except Exception as e:
+    print(f"Texture error: {e}. Falling back to solid blue sphere.")
     ax.plot_surface(x_earth, y_earth, z_earth, color="#0b5394", alpha=0.5, edgecolor="#00ffff", linewidth=0.2, zorder=0)
 
 # ------------------- 4. Extract Target and Alerts -------------------
 
-target_x, target_y, target_z = 0, 0, 0 # Fallback
-
+target_x, target_y, target_z = 0, 0, 0 
 if os.path.exists('output/collision_alert.csv'):
     collisions = pd.read_csv('output/collision_alert.csv')
+    collisions['X'] = pd.to_numeric(collisions['X'], errors='coerce')
+    collisions = collisions.dropna(subset=['X'])
     
-    # Retrieve the custom target position injected by C++
     target_data = collisions[collisions['Type'] == 'TARGET']
     if not target_data.empty:
         target_x = target_data.iloc[0]['X']
@@ -75,25 +78,25 @@ if os.path.exists('output/collision_alert.csv'):
         
     ax.plot([target_x], [target_y], [target_z], marker='*', color='gold', markersize=18, markeredgecolor='white', markeredgewidth=1, linestyle='None', label='Launch Payload', zorder=10)
 
-    # Plot dangerous debris vectors
     debris_alerts = collisions[collisions['Type'] == 'DEBRIS']
     for index, neighbor in debris_alerts.iterrows():
         ax.plot([target_x, neighbor['X']], [target_y, neighbor['Y']], [target_z, neighbor['Z']], color='#ff00ff', linewidth=2.5, linestyle='dashed', alpha=0.9, zorder=5)
-        ax.plot([neighbor['X']], [neighbor['Y']], [neighbor['Z']], marker='o', color='None', markeredgecolor='#ff00ff', markersize=16, markeredgewidth=2.5, linestyle='None', zorder=11, label='Imminent Threat!' if index == 1 else "")
+        ax.plot([neighbor['X']], [neighbor['Y']], [neighbor['Z']], marker='o', color='None', markeredgecolor='#ff00ff', markersize=16, markeredgewidth=2.5, linestyle='None', zorder=11)
 
 # -------------------- 5. Dynamically separate the fleet --------------------
 
-is_deb = df['Name'].astype(str).str.contains('DEB|FENGYUN|IRIDIUM|COSMOS', case=False, na=False)
+is_deb = df['Name'].astype(str).str.contains('DEB', case=False, na=False)
+
 active_sats = df[~is_deb]
 debris = df[is_deb]
 
-if len(debris) == 0:
-    active_sats = df.iloc[1:2000]
-    debris = df.iloc[2000:]
+# Fallback se a regra falhar (divide a meio para pelo menos garantir 2 cores visíveis)
+if len(debris) == 0 and len(df) > 1000:
+    active_sats = df.iloc[:1000]
+    debris = df.iloc[1000:]
 
-# High-contrast colors for dark background
-scatter_ativos = ax.scatter(active_sats['X'], active_sats['Y'], active_sats['Z'], color='#00ffcc', s=1.5, alpha=0.5, label='Active Satellites', zorder=1)
-scatter_detritos = ax.scatter(debris['X'], debris['Y'], debris['Z'], color='#ff3333', s=4, alpha=0.8, label='Space Debris', zorder=2)
+scatter_ativos = ax.scatter(active_sats['X'], active_sats['Y'], active_sats['Z'], color='#00ffcc', s=1.5, alpha=0.5, zorder=1)
+scatter_detritos = ax.scatter(debris['X'], debris['Y'], debris['Z'], color='#ff3333', s=4, alpha=0.8, zorder=2)
 
 # ---------------------- 7. Aesthetics configuration ----------------------
 
