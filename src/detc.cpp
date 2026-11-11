@@ -247,8 +247,10 @@ int main() {
         int file_sat_count = 0;
 
         while (getline(input, line)) {
-            // Skip headers and empty lines
-            if (line.find("GP data") != string::npos || line.find("Data is updated") != string::npos || line.empty()) {
+            // Remove espaços vazios ou saltos de linha "invisíveis" no final da string
+            line.erase(line.find_last_not_of(" \n\r\t") + 1);
+            
+            if (line.empty() || line.find("GP data") != string::npos || line.find("Data is updated") != string::npos) {
                 continue; 
             }
             
@@ -257,9 +259,8 @@ int main() {
             getline(input, line1);
             getline(input, line2);
 
-            // ------------------ 5.1. - Ignore incomplete or corrupted TLE lines ------------------
-          
-            if (line2.length() < 63) {
+            // GARANTIA DE INTEGRIDADE: TLEs genuínos têm pelo menos 63 chars e começam obrigatoriamente por 1 e 2.
+            if (line1.length() < 63 || line2.length() < 63 || line1[0] != '1' || line2[0] != '2') {
                 continue; 
             }
 
@@ -278,14 +279,13 @@ int main() {
                 file_sat_count++;
                 total_sat_count++;
             } catch (const std::exception& e) {
-                // Fallback silencioso para descartar satélites com dados numéricos corrompidos no TLE
                 continue;
             }
         }
         
         cout << "Success: Read " << file_sat_count << " objects from " << filename << endl;
         input.close(); 
-    } 
+    }
     
 // ------------------------------ 6. Spatial Engine Initialization ------------------------------
   
